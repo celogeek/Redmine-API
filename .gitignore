@@ -1,0 +1,11 @@
+*.swp
+.DS_Store
+*.old
+*.bak
+*.tdy
+.build
+.includepath
+.project
+Redmine-API-*
+xt/perlcritic.rc
+xt/perltidy.rc
