@@ -1,0 +1,79 @@
+package Redmine::API::Action;
+# ABSTRACT: Action to the API
+use strict;
+use warnings;
+# VERSION
+use Moo;
+use Carp;
+use Data::Dumper;
+
+use Net::HTTP::Spore;
+use JSON::XS;
+
+has 'request' => (
+    is => 'ro',
+    isa => sub {
+        croak "request should be a Redmine::API::Request object" unless ref $_[0] eq 'Redmine::API::Request';
+    },
+    required => 1,
+);
+
+has 'action' => (
+    is => 'ro',
+    required => 1,
+);
+
+has '_spec' => (
+    is => 'lazy',
+);
+sub _build__spec {
+    my $self = shift;
+    my $request = $self->request;
+    my $api = $request->api;
+
+    my $spec = encode_json({
+            version => 1.0,
+            methods => {
+                'create_'.$request->route => {
+                    path => '/'.$request->route.'.json',
+                    method => 'POST',
+                    authentication => 1,
+                }
+            },
+            api_format => [
+                'json',
+            ],
+            name => 'Redmine',
+            author => ['celogeek <me@celogeek.com>'],
+            meta => {
+                "documentation" => "http://www.redmine.org/projects/redmine/wiki/Rest_api"
+            },
+    });
+
+    return $spec;
+}
+
+has '_spore' => (
+    is => 'lazy',
+);
+sub _build__spore {
+    my $self = shift;
+    my $api = $self->request->api;
+
+    my $spore = Net::HTTP::Spore->new_from_string($self->_spec, base_url => $api->base_url, trace => $api->trace);
+    $spore->enable('Format::JSON');
+    $spore->enable('Auth::Header',
+        header_name => 'X-Redmine-API-Key',
+        header_value => $api->auth_key,
+    );
+
+    return $spore;
+}
+
+sub create {
+    my $self = shift;
+    my %data = @_;
+
+    $self->_spore->create_time_entries(payload => {$self->action => \%data});
+}
+1;
