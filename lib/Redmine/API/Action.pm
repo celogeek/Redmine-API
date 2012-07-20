@@ -29,7 +29,6 @@ has '_spec' => (
 sub _build__spec {
     my ($self) = @_;
     my $request = $self->request;
-    my $api = $request->api;
 
     my $spec = encode_json({
             version => 1.0,
