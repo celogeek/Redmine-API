@@ -81,6 +81,12 @@ sub _build__spore {
     my $api = $self->request->api;
 
     my $spore = Net::HTTP::Spore->new_from_string($self->_spec, base_url => $api->base_url, trace => $api->trace);
+    $spore->enable('Auth::Header',
+        header_name => 'X-Redmine-API-Key',
+        header_value => $api->auth_key,
+    );
+
+    #json for all in and out
     $spore->enable('Header',
         header_name => 'Content-Type',
         header_value => 'application/json',
@@ -89,10 +95,10 @@ sub _build__spore {
         header_name => 'Accept',
         header_value => 'application/json',
     );
-    $spore->enable('Auth::Header',
-        header_name => 'X-Redmine-API-Key',
-        header_value => $api->auth_key,
-    );
+
+    #serialize for create (post) and get
+    #delete / update (put) don t send data
+    $spore->enable_if(sub{$_[0]->method =~ /^GET|POST$/x}, 'Format::JSON');
 
     return $spore;
 }
@@ -108,7 +114,7 @@ data is pass thought payload
 =cut
 sub create {
     my ($self, %data) = @_;
-    return $self->_spore->create(payload => encode_json({$self->action => \%data}));
+    return $self->_spore->create(payload => {$self->action => \%data});
 }
 
 =method all

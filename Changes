@@ -1,5 +1,8 @@
 {{$NEXT}}
 
+    Serialize when need
+    delete / put dont send any data and crash Format::JSON, disabled in that case
+
 0.01      2012-07-20 12:21:06 Europe/Paris
 
     First release:
