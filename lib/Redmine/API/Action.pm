@@ -90,25 +90,68 @@ sub _build__spore {
     return $spore;
 }
 
+=method create
+
+Create entry into Redmine.
+
+Args: %data
+
+data is pass thought payload
+
+=cut
 sub create {
     my ($self, %data) = @_;
     return $self->_spore->create(payload => {$self->action => \%data});
 }
 
+=method all
+
+Get all data from Redmine.
+
+Args: %options
+
+You can pass offset, limit ...
+
+=cut
 sub all {
     my ($self, %options) = @_;
     return $self->_spore->all(%options);
 }
 
+
+=method get
+
+Get one entry from Redmine.
+
+Args: $id, %options
+
+=cut
 sub get {
     my ($self, $id, %options) = @_;
     return $self->_spore->get(id => $id, %options);
 }
 
+=method del
+
+Delete one entry from Redmine
+
+Args: $id
+
+=cut
 sub del {
     my ($self, $id) = @_;
     return $self->_spore->del(id => $id);
 }
+
+=method update
+
+Update one entry from Redmine
+
+Args: $id, %data
+
+data is pass thought payload to Redmine
+
+=cut
 
 sub update {
     my ($self, $id, %data) = @_;
