@@ -15,7 +15,7 @@ sub AUTOLOAD {
     my $self = shift;
     my $route = substr($AUTOLOAD, length(__PACKAGE__) + 2);
     return if $route eq 'DESTROY';
-    Redmine::API::Action->new(request => $self, action => $route);
+    return Redmine::API::Action->new(request => $self, action => $route);
 }
 
 has 'api' => (

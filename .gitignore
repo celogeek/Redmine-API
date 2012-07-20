@@ -7,5 +7,4 @@
 .includepath
 .project
 Redmine-API-*
-xt/perlcritic.rc
 xt/perltidy.rc
