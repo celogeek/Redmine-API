@@ -1,1 +1,9 @@
 {{$NEXT}}
+
+    First release:
+    
+    Method create/all/get/del/update
+
+    Full access to the REST::API
+
+    TODO: Test UNIT
