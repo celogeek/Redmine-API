@@ -34,11 +34,31 @@ sub _build__spec {
     my $spec = encode_json({
             version => 1.0,
             methods => {
-                'create_'.$request->route => {
+                'create' => {
                     path => '/'.$request->route.'.json',
                     method => 'POST',
                     authentication => 1,
-                }
+                },
+                'all' => {
+                    path => '/'.$request->route.'.json',
+                    method => 'GET',
+                    authentication => 1,
+                },
+                'get' => {
+                    path => '/'.$request->route.'/:id.json',
+                    method => 'GET',
+                    authentication => 1,
+                },
+                'update' => {
+                    path => '/'.$request->route.'/:id.json',
+                    method => 'PUT',
+                    authentication => 1,
+                },
+                'del' => {
+                    path => '/'.$request->route.'/:id.json',
+                    method => 'DELETE',
+                    authentication => 1,
+                },
             },
             api_format => [
                 'json',
@@ -74,6 +94,30 @@ sub create {
     my $self = shift;
     my %data = @_;
 
-    $self->_spore->create_time_entries(payload => {$self->action => \%data});
+    $self->_spore->create(payload => {$self->action => \%data});
+}
+
+sub all {
+    my $self = shift;
+    my %options = @_;
+    $self->_spore->all(%options);
+}
+
+sub get {
+    my $self = shift;
+    my ($id, %options) = @_;
+    $self->_spore->get(id => $id, %options);
+}
+
+sub del {
+    my $self = shift;
+    my ($id) = @_;
+    $self->_spore->del(id => $id);
+}
+
+sub update {
+    my $self = shift;
+    my ($id, %data) = @_;
+    $self->_spore->update(id => $id, payload => {$self->action => \%data});
 }
 1;
