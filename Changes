@@ -1,5 +1,7 @@
 {{$NEXT}}
 
+0.02      2012-07-20 18:07:20 Europe/Paris
+
     Serialize when need
     delete / put dont send any data and crash Format::JSON, disabled in that case
 
