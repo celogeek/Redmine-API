@@ -8,6 +8,7 @@ use Carp;
 use Data::Dumper;
 
 use Net::HTTP::Spore;
+use Net::HTTP::Spore::Middleware::Header;
 use JSON::XS;
 
 has 'request' => (
@@ -80,7 +81,14 @@ sub _build__spore {
     my $api = $self->request->api;
 
     my $spore = Net::HTTP::Spore->new_from_string($self->_spec, base_url => $api->base_url, trace => $api->trace);
-    $spore->enable('Format::JSON');
+    $spore->enable('Header',
+        header_name => 'Content-Type',
+        header_value => 'application/json',
+    );
+    $spore->enable('Header',
+        header_name => 'Accept',
+        header_value => 'application/json',
+    );
     $spore->enable('Auth::Header',
         header_name => 'X-Redmine-API-Key',
         header_value => $api->auth_key,
@@ -100,7 +108,7 @@ data is pass thought payload
 =cut
 sub create {
     my ($self, %data) = @_;
-    return $self->_spore->create(payload => {$self->action => \%data});
+    return $self->_spore->create(payload => encode_json({$self->action => \%data}));
 }
 
 =method all
@@ -154,6 +162,6 @@ data is pass thought payload to Redmine
 
 sub update {
     my ($self, $id, %data) = @_;
-    return $self->_spore->update(id => $id, payload => {$self->action => \%data});
+    return $self->_spore->update(id => $id, payload => encode_json({$self->action => \%data}));
 }
 1;
