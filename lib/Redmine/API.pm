@@ -5,8 +5,6 @@ package Redmine::API;
 use strict;
 use warnings;
 # VERSION
-use Data::Dumper;
-use Carp;
 
 use Moo;
 use Redmine::API::Request;
@@ -42,9 +40,7 @@ __END__
 
 Redmine::API is a module to communicate with Redmine thought the REST::Api.
 
-It use L<Net::HTTP::Spore> and generate spec on the fly that matching your need.
-
-Any result will be a spore object, with body and headers.
+Any result will be a perl HASH, transformation of the json response into a perl HASH.
 
 =head1 SYNOPSIS
 
@@ -88,12 +84,4 @@ If the API say : "GET /projects.xml" to get all project, you can do :
 If the API say : "GET /projects/:id.:format", you can do :
 
     $c->projects->project->get(1);
-
-=head1 SEE ALSO
-
-L<App::Redmine>
-
-=cut
-
-
 

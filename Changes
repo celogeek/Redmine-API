@@ -1,18 +1,2 @@
-{{$NEXT}}
-
-0.03      2012-11-27 00:07:56 Europe/Paris
-
-0.02      2012-07-20 18:07:20 Europe/Paris
-
-    Serialize when need
-    delete / put dont send any data and crash Format::JSON, disabled in that case
-
-0.01      2012-07-20 12:21:06 Europe/Paris
-
-    First release:
-    
-    Method create/all/get/del/update
-
-    Full access to the REST::API
-
-    TODO: Test UNIT
+0.04  2014-02-02 19:42:14 GMT
+    * Feature #414 : use REST::Client instead of Net::HTTP::Spore (Celogeek San)
