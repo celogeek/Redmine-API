@@ -4,7 +4,6 @@ use strict;
 use warnings;
 # VERSION
 use Carp;
-use Data::Dumper;
 
 use Moo;
 use Redmine::API::Action;
