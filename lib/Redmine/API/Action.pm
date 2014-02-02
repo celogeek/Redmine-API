@@ -4,12 +4,10 @@ use strict;
 use warnings;
 # VERSION
 use Moo;
-use Carp;
-use Data::Dumper;
 
-use Net::HTTP::Spore;
-use Net::HTTP::Spore::Middleware::Header;
-use JSON::XS;
+use Carp;
+use JSON;
+use REST::Client;
 
 has 'request' => (
     is => 'ro',
@@ -24,83 +22,21 @@ has 'action' => (
     required => 1,
 );
 
-has '_spec' => (
-    is => 'lazy',
+has '_rest_cli' => (
+  is => 'lazy'
 );
-sub _build__spec {
-    my ($self) = @_;
-    my $request = $self->request;
 
-    my $spec = encode_json({
-            version => 1.0,
-            methods => {
-                'create' => {
-                    path => '/'.$request->route.'.json',
-                    method => 'POST',
-                    authentication => 1,
-                },
-                'all' => {
-                    path => '/'.$request->route.'.json',
-                    method => 'GET',
-                    authentication => 1,
-                },
-                'get' => {
-                    path => '/'.$request->route.'/:id.json',
-                    method => 'GET',
-                    authentication => 1,
-                },
-                'update' => {
-                    path => '/'.$request->route.'/:id.json',
-                    method => 'PUT',
-                    authentication => 1,
-                },
-                'del' => {
-                    path => '/'.$request->route.'/:id.json',
-                    method => 'DELETE',
-                    authentication => 1,
-                },
-            },
-            api_format => [
-                'json',
-            ],
-            name => 'Redmine',
-            author => ['celogeek <me@celogeek.com>'],
-            meta => {
-                "documentation" => "http://www.redmine.org/projects/redmine/wiki/Rest_api"
-            },
-    });
+sub _build__rest_cli {
+  my ($self) = @_;
+  my $api = $self->request->api;
 
-    return $spec;
-}
+  my $cli = REST::Client->new();
+  $cli->setHost($api->base_url);
+  $cli->addHeader('X-Redmine-API-Key' => $api->auth_key);
+  $cli->addHeader('Content-Type' => 'application/json');
+  $cli->addHeader('Accept' => 'application/json');
+  return $cli;
 
-has '_spore' => (
-    is => 'lazy',
-);
-sub _build__spore {
-    my ($self) = @_;
-    my $api = $self->request->api;
-
-    my $spore = Net::HTTP::Spore->new_from_string($self->_spec, base_url => $api->base_url, trace => $api->trace);
-    $spore->enable('Auth::Header',
-        header_name => 'X-Redmine-API-Key',
-        header_value => $api->auth_key,
-    );
-
-    #json for all in and out
-    $spore->enable('Header',
-        header_name => 'Content-Type',
-        header_value => 'application/json',
-    );
-    $spore->enable('Header',
-        header_name => 'Accept',
-        header_value => 'application/json',
-    );
-
-    #serialize for create (post) and get
-    #delete / update (put) don t send data
-    $spore->enable_if(sub{$_[0]->method =~ /^GET|POST$/x}, 'Format::JSON');
-
-    return $spore;
 }
 
 =method create
@@ -114,7 +50,12 @@ data is pass thought payload
 =cut
 sub create {
     my ($self, %data) = @_;
-    return $self->_spore->create(payload => {$self->action => \%data});
+    return $self->formatResponse(
+      $self->_rest_cli->POST(
+        '/' . $self->request->route . '.json',
+        encode_json({$self->action => \%data}),
+      )
+    );
 }
 
 =method all
@@ -128,7 +69,7 @@ You can pass offset, limit ...
 =cut
 sub all {
     my ($self, %options) = @_;
-    return $self->_spore->all(%options);
+    return $self->formatResponse($self->_rest_cli->GET('/' . $self->request->route . '.json' . $self->_rest_cli->buildQuery(\%options)));
 }
 
 
@@ -141,7 +82,7 @@ Args: $id, %options
 =cut
 sub get {
     my ($self, $id, %options) = @_;
-    return $self->_spore->get(id => $id, %options);
+    return $self->formatResponse($self->_rest_cli->GET('/' . $self->request->route . '/' . $id . '.json' . $self->_rest_cli->buildQuery(\%options)));
 }
 
 =method del
@@ -153,7 +94,7 @@ Args: $id
 =cut
 sub del {
     my ($self, $id) = @_;
-    return $self->_spore->del(id => $id);
+    return $self->formatResponse($self->_rest_cli->DELETE('/' . $self->request->route . '/' . $id . '.json'));
 }
 
 =method update
@@ -168,6 +109,36 @@ data is pass thought payload to Redmine
 
 sub update {
     my ($self, $id, %data) = @_;
-    return $self->_spore->update(id => $id, payload => encode_json({$self->action => \%data}));
+    return $self->formatResponse(
+      $self->_rest_cli->PUT(
+        '/' . $self->request->route . '/' . $id . '.json',
+        encode_json({$self->action => \%data}),
+      )
+    );
 }
+
+=method formatResponse
+
+return response except if the message has not the right status
+
+=cut
+
+sub formatResponse {
+  my ($self, $req) = @_;
+
+  return {} if $req->responseCode == 404;
+
+  croak "ERROR ", $req->responseCode, " : ACCESS FORBIDDEN, CHECK YOUR TOKEN !" if $req->responseCode == 401;  
+  croak "ERROR ", $req->responseCode, " : ", $req->responseContent if $req->responseCode >= 500;
+
+  return {} if !length($req->responseContent);
+
+  my $resp;
+  if (! eval{ $resp = decode_json($req->responseContent); 1 }) {
+    croak "Bad JSON format : ", $req->responseContent;
+  }
+
+  return $resp;
+}
+
 1;
